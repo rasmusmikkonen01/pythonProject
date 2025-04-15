@@ -15,3 +15,5 @@ COPY calculator.py .
 # 4. Määrittele komento, joka ajetaan kun kontti käynnistetään
 #    Tämä ajaa suoraan python-skriptin
 CMD ["python", "calculator.py"]
+
+CMD ["tail", "-f", "/dev/null"]
