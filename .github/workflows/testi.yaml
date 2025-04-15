@@ -1,4 +1,4 @@
-name: Python Calculator Tests and Report as Artifact
+name: Python Calculator Tests
 
 on: [push]
 
@@ -10,24 +10,14 @@ jobs:
       - name: Set up Python 3.x
         uses: actions/setup-python@v3
         with:
-          python-version: '3.x'
+          python-version: "3.x"
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt # Asentaa pytest, requests ym.
       - name: Build the Docker image
         run: docker build -t calculator-app .
       - name: Run the Docker container
         run: docker run -d --name calculator calculator-app
-      - name: List files in /app directory
-        run: docker exec calculator ls /app
-      - name: Install Robot Framework
-        run: docker exec calculator pip install robotframework
-      - name: Run Robot Framework tests and generate reports
-        run: docker exec calculator robot --outputdir /app/robot_reports test.robot
-      - name: List contents of /app after test run
-        run: docker exec calculator ls -l /app
-      - name: Upload Robot Framework reports as artifacts
-        uses: actions/upload-pages-artifact@v3
-        with:
-          name: robot-reports
-          path: /app/robot_reports
-      - name: Get Docker container logs if tests fail
-        if: failure()
-        run: docker logs calculator
+      - name: Run Robot Framework tests
+        run: docker exec calculator robot test.robot
