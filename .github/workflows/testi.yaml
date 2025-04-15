@@ -15,7 +15,5 @@ jobs:
         run: docker build -t calculator-app .
       - name: Run the Docker container
         run: docker run -d --name calculator calculator-app
-      - name: Install Robot Framework
-        run: docker exec calculator pip install robotframework
       - name: Run Robot Framework tests
         run: docker exec calculator robot test.robot
