@@ -1,0 +1,2 @@
+# requirements.txt
+Flask>=2.0  # Esimerkiksi Flask versio 2.0 tai uudempi
