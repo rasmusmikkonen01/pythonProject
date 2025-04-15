@@ -1,55 +1,41 @@
 # .github/workflows/ci.yml
 
-# Työnkulun nimi, näkyy GitHubin Actions-välilehdellä
-name: Python CI with Docker Test
+name: Python CI Test Script Output
 
-# Liipaisimet (triggers): Milloin tämä työnkulku ajetaan
 on:
   push:
-    branches: [ main ]  # Aja aina, kun koodia pushataan 'main'-haaraan
+    branches: [main]
   pull_request:
-    branches: [ main ]  # Aja myös, kun luodaan pull request 'main'-haaraan
+    branches: [main]
 
-# Työt (jobs): Mitä tässä työnkulussa tehdään
 jobs:
-  build-and-test:
-    # Suoritusympäristö: Käytetään GitHubin tarjoamaa virtuaalikonetta
+  build-and-test-output:
     runs-on: ubuntu-latest
-
-    # Vaiheet (steps): Yksittäiset komennot ja toiminnot järjestyksessä
     steps:
-      # Vaihe 1: Hae koodi repositoriosta tähän suoritusympäristöön
       - name: Checkout repository code
-        uses: actions/checkout@v4 # Käyttää valmista GitHub Actionia koodin hakuun
+        uses: actions/checkout@v4
 
-      # Vaihe 2: Rakenna Docker-image Dockerfile-tiedostosta
       - name: Build Docker image
-        run: docker build -t my-python-app:${{ github.sha }} .
-        # Käytetään commitin SHA-tunnistetta uniikkina tagina imagelle
-        # '.' tarkoittaa, että Dockerfile on juurihakemistossa
+        run: docker build -t my-python-calculator:${{ github.sha }} .
+        # Rakennetaan image käyttäen päivitettyä Dockerfilea
 
-      # Vaihe 3: Käynnistä kontti rakennetusta imagesta taustalla (-d)
-      # Annetaan kontille nimi (--name) ja mapitetaan portti (isäntä:kontti)
-      # Käytetään eri isäntäporttia (8080) kuin konttiporttia (5000) varmuuden vuoksi
-      - name: Run container from image
-        run: docker run -d --name test-container -p 8080:5000 my-python-app:${{ github.sha }}
-
-      # Vaihe 4: Odota hetki, että palvelin ehtii käynnistyä kontin sisällä
-      - name: Wait for application to start
-        run: sleep 10 # Odotetaan 10 sekuntia (voi vaatia säätöä)
-
-      # Vaihe 5: Aja yksinkertainen testi: Tarkista vastaako palvelin HTTP 200 OK
-      - name: Test application accessibility
+      - name: Run container and test output
         run: |
-          echo "Attempting to curl localhost:8080"
-          curl --fail --retry 5 --retry-delay 2 http://localhost:8080/
-        # --fail: curl palauttaa virhekoodin, jos HTTP-status ei ole 2xx (esim. 404 tai 500)
-        # --retry ja --retry-delay: Yritetään uudelleen, jos yhteys ei heti onnistu
+          # Aja kontti ja kaappaa sen vakiotuloste muuttujaan 'output'
+          # '--rm' poistaa kontin automaattisesti ajon jälkeen
+          output=$(docker run --rm my-python-calculator:${{ github.sha }})
 
-      # Vaihe 6: Siivous (ajetaan aina, vaikka testi epäonnistuisi)
-      - name: Stop and remove container
-        if: always() # Tämä vaihe suoritetaan aina riippumatta edellisten onnistumisesta
-        run: |
-          echo "Stopping and removing the test container..."
-          docker stop test-container
-          docker rm test-container
+          # Määrittele odotettu tuloste
+          expected_output="Laskutoimituksen tulos: 15"
+
+          echo "Odotettu tuloste: '$expected_output'"
+          echo "Saatu tuloste:    '$output'"
+
+          # Vertaa saatua tulostetta odotettuun
+          if [ "$output" = "$expected_output" ]; then
+            echo "Testi läpäisty: Tuloste vastaa odotettua."
+            exit 0 # Poistu onnistuneesti (statuskoodi 0)
+          else
+            echo "Testi epäonnistui: Tuloste EI vastaa odotettua."
+            exit 1 # Poistu virhekoodilla (mikä tahansa muu kuin 0)
+          fi
