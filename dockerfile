@@ -10,7 +10,7 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 # 3. Kopioi Python-skripti työhakemistoon
-COPY calculator.py .
+COPY . .
 
 # 4. Määrittele komento, joka ajetaan kun kontti käynnistetään
 #    Tämä ajaa suoraan python-skriptin
