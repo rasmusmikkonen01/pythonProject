@@ -21,6 +21,8 @@ jobs:
         run: docker exec calculator pip install robotframework
       - name: Run Robot Framework tests and generate reports
         run: docker exec calculator robot --outputdir /app/robot_reports test.robot
+      - name: List contents of /app after test run
+        run: docker exec calculator ls -l /app
       - name: Upload Robot Framework reports as artifacts
         uses: actions/upload-pages-artifact@v3
         with:
