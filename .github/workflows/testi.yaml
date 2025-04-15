@@ -1,41 +1,21 @@
-# .github/workflows/ci.yml
+name: Python Calculator Tests
 
-name: Python CI Test Script Output
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+on: [push]
 
 jobs:
-  build-and-test-output:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository code
-        uses: actions/checkout@v4
-
-      - name: Build Docker image
-        run: docker build -t my-python-calculator:${{ github.sha }} .
-        # Rakennetaan image käyttäen päivitettyä Dockerfilea
-
-      - name: Run container and test output
-        run: |
-          # Aja kontti ja kaappaa sen vakiotuloste muuttujaan 'output'
-          # '--rm' poistaa kontin automaattisesti ajon jälkeen
-          output=$(docker run --rm my-python-calculator:${{ github.sha }})
-
-          # Määrittele odotettu tuloste
-          expected_output="Laskutoimituksen tulos: 15"
-
-          echo "Odotettu tuloste: '$expected_output'"
-          echo "Saatu tuloste:    '$output'"
-
-          # Vertaa saatua tulostetta odotettuun
-          if [ "$output" = "$expected_output" ]; then
-            echo "Testi läpäisty: Tuloste vastaa odotettua."
-            exit 0 # Poistu onnistuneesti (statuskoodi 0)
-          else
-            echo "Testi epäonnistui: Tuloste EI vastaa odotettua."
-            exit 1 # Poistu virhekoodilla (mikä tahansa muu kuin 0)
-          fi
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.x"
+      - name: Build the Docker image
+        run: docker build -t calculator-app .
+      - name: Run the Docker container
+        run: docker run -d --name calculator calculator-app
+      - name: Install Robot Framework
+        run: docker exec calculator pip install robotframework
+      - name: Run Robot Framework tests
+        run: docker exec calculator robot test.robot
