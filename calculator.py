@@ -1,22 +1,26 @@
 # calculator.py
 
 def perform_sum(value1, value2):
-
+  value1 = int(value1)
+  value2 = int(value2)
   result = value1 + value2
   return f"Laskutoimituksen tulos: {result}"
 
 def perform_minus(value1, value2):
-
+  value1 = int(value1)
+  value2 = int(value2)
   result = value1 - value2
   return f"Laskutoimituksen tulos: {result}"
 
 def perform_product(value1, value2):
-
+  value1 = int(value1)
+  value2 = int(value2)
   result = value1* value2
   return f"Laskutoimituksen tulos: {result}"
 
 def perform_deviation(value1, value2):
-
+  value1 = int(value1)
+  value2 = int(value2)
   result = value1 / value2
   return f"Laskutoimituksen tulos: {result}"
 
