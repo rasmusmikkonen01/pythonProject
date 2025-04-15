@@ -22,7 +22,7 @@ jobs:
       - name: Run Robot Framework tests and generate reports
         run: docker exec calculator robot --outputdir /app/robot_reports test.robot
       - name: Upload Robot Framework reports as artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: robot-reports
           path: /app/robot_reports
