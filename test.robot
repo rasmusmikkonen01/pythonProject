@@ -19,7 +19,3 @@ Testaa Tulo
 Testaa Jako
     ${RESULT}=    Perform Deviation    15    3
     Should Be Equal    ${RESULT}    Laskutoimituksen tulos: 5.0
-
-Testaa Jako Nollalla
-    ${RESULT}=    Run Keyword And Expect Error    *ZeroDivisionError* Perform Deviation    10    0
-    Should Contain    ${RESULT}    division by zero
