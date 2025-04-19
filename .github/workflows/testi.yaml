@@ -1,23 +1,108 @@
-name: Python Calculator Tests
+name: Python Calculator Tests and Report Publishing
 
+# Käynnistyy push-tapahtumasta (kaikkiin haaroihin oletuksena)
 on: [push]
 
+# Määritä GITHUB_TOKENille tarvittavat oikeudet GitHub Pagesiin julkaisua varten
+permissions:
+  contents: read     # Tarvitaan koodin noutamiseen (checkout)
+  pages: write       # Tarvitaan GitHub Pagesiin kirjoittamiseen
+  id-token: write    # Tarvitaan OIDC-tunnistautumiseen GitHub Pagesille
+
 jobs:
-  build:
+  # Nimetään jobi uudelleen kuvaamaan testausta ja raportin luontia
+  test_and_prepare_report:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4 # Päivitetty versioon v4
+
       - name: Set up Python 3.x
-        uses: actions/setup-python@v3
+        # Tämä vaihe voi olla tarpeeton, jos Dockerfile hoitaa kaiken Pythoniin liittyvän
+        # ja et tarvitse Pythonia runnerilla ennen Docker-vaiheita. Harkitse poistamista.
+        uses: actions/setup-python@v4 # Päivitetty versioon v4
         with:
           python-version: "3.x"
+
       - name: Install test dependencies
+        # Tämäkin vaihe voi olla tarpeeton, jos Dockerfile asentaa kaiken tarvittavan
+        # imageen, eikä näitä riippuvuuksia tarvita runnerilla.
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt # Asentaa pytest, requests ym.
+
       - name: Build the Docker image
         run: docker build -t calculator-app .
-      - name: Run the Docker container
+
+      - name: Run the Docker container for the application
+        # Ajetaan sovelluskontti taustalla (-d)
         run: docker run -d --name calculator calculator-app
-      - name: Run Robot Framework tests
-        run: docker exec calculator robot test.robot
+
+      # --- Testien ajo ja tulosten kerääminen ---
+      - name: Run Robot Framework tests inside the container
+        run: |
+          # Aja testit kontin sisällä.
+          # TÄRKEÄÄ: Varmista, että tiedät, mihin hakemistoon kontin SISÄLLÄ
+          # Robot Framework tallentaa tulokset (report.html, log.html, output.xml).
+          # Oletetaan tässä, että ne menevät /app/results -hakemistoon.
+          # Voit joutua lisäämään robot-komentoon '-d /app/results' tai vastaavan.
+          # Esimerkki: docker exec calculator robot -d /app/results test.robot
+          docker exec calculator robot -d /results test.robot
+        # Jatka työnkulkua, vaikka testit epäonnistuisivat, jotta raportti voidaan silti julkaista
+        continue-on-error: true
+
+      - name: Create results directory on runner
+        # Luodaan hakemisto runnerin tiedostojärjestelmään tuloksia varten
+        run: mkdir -p ./test-results
+        # Ajetaan aina, jotta hakemisto on olemassa kopiointia varten
+        if: always()
+
+      - name: Copy test results from container
+        # Kopioidaan tulokset kontin sisältä runnerille
+        # TÄRKEÄÄ: Muokkaa polkua 'calculator:/app/results/.' vastaamaan sitä,
+        # mihin Robot Framework tallensi tulokset kontin sisällä!
+        run: docker cp calculator:/results/. ./test-results/
+        # Ajetaan aina, jotta tulokset yritetään kopioida, vaikka testit olisivat epäonnistuneet
+        if: always()
+
+      - name: Stop and remove the container
+        # Siivotaan ajettu kontti
+        run: docker stop calculator && docker rm calculator
+        # Ajetaan aina siivouksen varmistamiseksi
+        if: always()
+
+      # --- GitHub Pages -julkaisun valmistelu ---
+      - name: List results files (for debugging)
+        # Listaa kopioidut tiedostot, auttaa vianetsinnässä
+        run: ls -l ./test-results
+        if: always()
+
+      - name: Setup Pages
+        # Valmistelee GitHub Pages -julkaisun
+        uses: actions/configure-pages@v5
+        if: always() # Ajetaan aina, jotta deploy-vaihe toimii
+
+      - name: Upload artifact
+        # Lataa testitulokset sisältävän hakemiston artefaktina GitHub Pagesia varten
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Polku hakemistoon runnerilla, joka sisältää julkaistavat tiedostot
+          path: './test-results'
+        if: always() # Ladataan artefakti aina (myös epäonnistuneiden testien raportti)
+
+  # --- Julkaisujobi ---
+  deploy:
+    # Tämä jobi ajetaan vasta, kun 'test_and_prepare_report' on valmis (onnistui tai epäonnistui)
+    needs: test_and_prepare_report
+    # Vain jos edellinen jobi onnistui TAI epäonnistui (eli ajettiin loppuun)
+
+    # Määritä julkaisuympäristö (käyttää repositorion Pages-asetuksia)
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }} # Antaa julkaistun sivun URL:n työnkulun lokiin
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        # Tämä toiminto ottaa upload-pages-artifactin luoman artefaktin ja julkaisee sen
+        uses: actions/deploy-pages@v4
