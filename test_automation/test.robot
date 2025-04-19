@@ -1,7 +1,7 @@
 ***Settings***
 Library    BuiltIn
 Library    OperatingSystem
-Library    ./calculator.py
+Library    ../src/calculator.py
 
 ***Test Cases***
 Testaa Summa
