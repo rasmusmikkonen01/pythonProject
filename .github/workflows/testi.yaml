@@ -5,9 +5,9 @@ on: [push]
 
 # Määritä GITHUB_TOKENille tarvittavat oikeudet GitHub Pagesiin julkaisua varten
 permissions:
-  contents: read     # Tarvitaan koodin noutamiseen (checkout)
-  pages: write       # Tarvitaan GitHub Pagesiin kirjoittamiseen
-  id-token: write    # Tarvitaan OIDC-tunnistautumiseen GitHub Pagesille
+  contents: read # Tarvitaan koodin noutamiseen (checkout)
+  pages: write # Tarvitaan GitHub Pagesiin kirjoittamiseen
+  id-token: write # Tarvitaan OIDC-tunnistautumiseen GitHub Pagesille
 
 jobs:
   # Nimetään jobi uudelleen kuvaamaan testausta ja raportin luontia
@@ -23,13 +23,6 @@ jobs:
         uses: actions/setup-python@v4 # Päivitetty versioon v4
         with:
           python-version: "3.x"
-
-      - name: Install test dependencies
-        # Tämäkin vaihe voi olla tarpeeton, jos Dockerfile asentaa kaiken tarvittavan
-        # imageen, eikä näitä riippuvuuksia tarvita runnerilla.
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt # Asentaa pytest, requests ym.
 
       - name: Build the Docker image
         run: docker build -t calculator-app .
@@ -87,7 +80,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           # Polku hakemistoon runnerilla, joka sisältää julkaistavat tiedostot
-          path: './test-results'
+          path: "./test-results"
         if: always() # Ladataan artefakti aina (myös epäonnistuneiden testien raportti)
 
   # --- Julkaisujobi ---
