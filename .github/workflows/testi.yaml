@@ -25,7 +25,7 @@ jobs:
           python-version: "3.x"
 
       - name: Build the Docker image
-        run: docker build -t calculator-app .
+        run: docker build -t calculator-app ./build_automation
 
       - name: Run the Docker container for the application
         # Ajetaan sovelluskontti taustalla (-d)
