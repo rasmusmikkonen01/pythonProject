@@ -1,12 +1,12 @@
 ***Settings***
 Library    BuiltIn
 Library    OperatingSystem
-Library    ./calculator.py  # Polku Python-tiedostoosi
+Library    ./calculator.py
 
 ***Test Cases***
 Testaa Summa
     ${RESULT}=    Perform Sum    5    3
-    Should Be Equal    ${RESULT}    Laskutoimituksen tulos: 9
+    Should Be Equal    ${RESULT}    Laskutoimituksen tulos: 8
 
 Testaa Miinus
     ${RESULT}=    Perform Minus    10    4
