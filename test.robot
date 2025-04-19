@@ -6,7 +6,7 @@ Library    ./calculator.py  # Polku Python-tiedostoosi
 ***Test Cases***
 Testaa Summa
     ${RESULT}=    Perform Sum    5    3
-    Should Be Equal    ${RESULT}    Laskutoimituksen tulos: 8
+    Should Be Equal    ${RESULT}    Laskutoimituksen tulos: 9
 
 Testaa Miinus
     ${RESULT}=    Perform Minus    10    4
