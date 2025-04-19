@@ -15,17 +15,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4 # Päivitetty versioon v4
+        uses: actions/checkout@v4
 
-      - name: Set up Python 3.x
-        # Tämä vaihe voi olla tarpeeton, jos Dockerfile hoitaa kaiken Pythoniin liittyvän
-        # ja et tarvitse Pythonia runnerilla ennen Docker-vaiheita. Harkitse poistamista.
-        uses: actions/setup-python@v4 # Päivitetty versioon v4
-        with:
-          python-version: "3.x"
+      # Set up Python 3.x -vaihe voidaan poistaa, jos kaikki riippuvuudet asennetaan Docker-imageen.
+      # Poista tämä vaihe, jos requirements.txt sisältää kaikki testaukseen tarvittavat riippuvuudet
+      # ja asennat ne Dockerfilessa.
+      # - name: Set up Python 3.x
+      #   uses: actions/setup-python@v4
+      #   with:
+      #     python-version: "3.x"
 
       - name: Build the Docker image
-        run: docker build -t calculator-app ./build_automation
+        # Muuta build-komentoa: build context on nyt repositorion juuri (.),
+        # ja -f lippua käytetään osoittamaan Dockerfileen build_automation-kansiossa.
+        run: docker build -t calculator-app -f ./build_automation/Dockerfile .
 
       - name: Run the Docker container for the application
         # Ajetaan sovelluskontti taustalla (-d)
@@ -35,7 +38,10 @@ jobs:
       - name: Run Robot Framework tests inside the container
         run: |
           # Aja testit kontin sisällä.
-          docker exec calculator robot -d ../results test.robot
+          # Määritellään polku testitiedostoon kontin sisällä (/app/test_automation/test.robot)
+          # ja tuloshakemisto (/app/results) kontin sisällä.
+          # Robot Frameworkin tulokset (log.html, report.html, output.xml) tallennetaan /app/results-kansioon kontin sisälle
+          docker exec calculator robot -d /app/results /app/test_automation/test.robot
         # Jatka työnkulkua, vaikka testit epäonnistuisivat, jotta raportti voidaan silti julkaista
         continue-on-error: true
 
@@ -47,9 +53,8 @@ jobs:
 
       - name: Copy test results from container
         # Kopioidaan tulokset kontin sisältä runnerille
-        # TÄRKEÄÄ: Muokkaa polkua 'calculator:/app/results/.' vastaamaan sitä,
-        # mihin Robot Framework tallensi tulokset kontin sisällä!
-        run: docker cp calculator:/results/. ./test-results/
+        # Kopioidaan /app/results-kansiosta kontin sisältä (jossa Robot Framework tallensi ne)
+        run: docker cp calculator:/app/results/. ./test-results/
         # Ajetaan aina, jotta tulokset yritetään kopioida, vaikka testit olisivat epäonnistuneet
         if: always()
 
@@ -74,23 +79,19 @@ jobs:
         # Lataa testitulokset sisältävän hakemiston artefaktina GitHub Pagesia varten
         uses: actions/upload-pages-artifact@v3
         with:
-          # Polku hakemistoon runnerilla, joka sisältää julkaistavat tiedostot
+          # Polku hakemistoon runnerilla
           path: "./test-results"
         if: always() # Ladataan artefakti aina (myös epäonnistuneiden testien raportti)
 
   # --- Julkaisujobi ---
   deploy:
-    # Tämä jobi ajetaan vasta, kun 'test_and_prepare_report' on valmis (onnistui tai epäonnistui)
     needs: test_and_prepare_report
-    # Vain jos edellinen jobi onnistui TAI epäonnistui (eli ajettiin loppuun)
 
-    # Määritä julkaisuympäristö (käyttää repositorion Pages-asetuksia)
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }} # Antaa julkaistun sivun URL:n työnkulun lokiin
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        # Tämä toiminto ottaa upload-pages-artifactin luoman artefaktin ja julkaisee sen
         uses: actions/deploy-pages@v4

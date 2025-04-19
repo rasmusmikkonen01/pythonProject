@@ -1,4 +1,4 @@
-# Dockerfile
+# build_automation/Dockerfile
 
 # 1. Valitse pohja-image
 FROM python:3.10-slim
@@ -6,13 +6,20 @@ FROM python:3.10-slim
 # 2. Aseta työskentelyhakemisto kontin sisällä
 WORKDIR /app
 
-COPY requirements.txt .
+# 3. Kopioi requirements.txt ja asenna riippuvuudet
+# Kopioi requirements.txt build contextista (repositorion juuri) polusta build_automation/requirements.txt
+COPY build_automation/requirements.txt .
 RUN pip install -r requirements.txt
 
-# 3. Kopioi koko hakemisto työhakemistoon
-COPY . .
 
-# 4. Määrittele komento, joka ajetaan kun kontti käynnistetään
-CMD ["python", "calculator.py"]
+# 4. Kopioi tarvittavat sovellus- ja testihakemistot työhakemistoon
+# Kopioi src-kansio (sisältää calculator.py) build contextista polusta src
+COPY src /app/src
 
+# Kopioi test_automation-kansio (sisältää test.robot) build contextista polusta test_automation
+COPY test_automation /app/test_automation
+
+# 5. Määrittele komento, joka pitää kontin käynnissä testien ajoa varten
+# Käytetään tail -f pitämään kontti käynnissä, jotta docker exec toimii
+# Poista CMD ["python", "calculator.py"] rivi, koska sitä ei tarvita testejä ajettaessa.
 CMD ["tail", "-f", "/dev/null"]
